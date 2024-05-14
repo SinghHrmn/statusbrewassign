@@ -83,7 +83,7 @@ export class ColorGridSelectComponent
 
   private readonly _ngZone = inject(NgZone);
 
-  private _itemsPerRow = 5;
+  private _itemsPerRow = signal(this.items.length);
 
   private _keyManager!: FocusKeyManager<ColorGridItemComponent>;
 
@@ -94,6 +94,8 @@ export class ColorGridSelectComponent
 
   private _onTouched = (): void => void 0;
   private _onChange = (val?: string | null): void => void 0;
+
+  private width = 0;
 
   @HostBinding('attr.tabindex')
   private get _tabIndex() {
@@ -145,12 +147,7 @@ export class ColorGridSelectComponent
 
   /** @todo logic to generate a grid of colors to allow navigation */
   public readonly grid = computed((): string[][] => {
-    // Calculate the number of items that can be added per row
-    // The calculation will be based on the available width of the element width and itemSize
-    //   this._itemsPerRow = ...
-    //
-
-    return chunk(this._items(), this._itemsPerRow);
+    return chunk(this._items(), this._itemsPerRow());
   });
 
   public get keyMan() {
@@ -225,6 +222,23 @@ export class ColorGridSelectComponent
     });
   }
 
+
+  @HostListener('window:resize', ['$event'])
+  resizeListener() {
+    if (this._el) {
+      this.width = this._el.nativeElement.offsetWidth;
+    }
+
+    const itemSizeMap = {
+      small: 40,
+      medium: 80,
+      large: 160,
+    };
+    if (this.width > 0) {
+      this._itemsPerRow.update(() => Math.floor(this.width / itemSizeMap[this.itemSize]))
+    }
+  }
+
   public ngOnDestroy() {
     this._keyManager.destroy();
     this._el.nativeElement.removeEventListener('focusin', this._handleFocusin);
@@ -256,12 +270,12 @@ export class ColorGridSelectComponent
         break;
       }
       case LEFT_ARROW: {
-        this._navigateLeft();
+        // this._navigateLeft();
         this._keyManager.onKeydown(event);
         break;
       }
       case RIGHT_ARROW: {
-        this._navigateRight();
+        // this._navigateRight();
         this._keyManager.onKeydown(event);
         break;
       }
@@ -269,49 +283,55 @@ export class ColorGridSelectComponent
   }
 
   private _navigateUp() {
+    if (!this._itemsPerRow) {
+      return;
+    }
     const currentIndex = this._keyManager.activeItemIndex || 0;
-    const newIndex = currentIndex - (this._itemsPerRow - 1);
+    const newIndex = currentIndex - (this._itemsPerRow() - 1);
 
     if (newIndex >= 0) {
       this._setActiveOption(newIndex);
     } else {
       const lastRowIndex = Math.max(0, this.grid().length - 1);
-      const newLastIndex = lastRowIndex * this._itemsPerRow + currentIndex + 1;
+      const newLastIndex = lastRowIndex * this._itemsPerRow() + currentIndex + 1;
       this._setActiveOption(newLastIndex);
 
     }
   }
 
   private _navigateDown() {
+    if (!this._itemsPerRow) {
+      return;
+    }
     const currentIndex = this._keyManager.activeItemIndex || 0;
-    const newIndex = currentIndex + this._itemsPerRow;
+    const newIndex = currentIndex + this._itemsPerRow();
     if (newIndex < this.items.length) {
       this._setActiveOption(newIndex - 1);
     } else {
-      const newIndex = currentIndex%this._itemsPerRow;
+      const newIndex = currentIndex%this._itemsPerRow();
       this._setActiveOption(newIndex-1);
     }
   }
 
-  private _navigateLeft() {
-    const currentIndex = this._keyManager.activeItemIndex || 0;
-    const firstLastIndex = (currentIndex%this._itemsPerRow) == 0;
+  // private _navigateLeft() {
+  //   const currentIndex = this._keyManager.activeItemIndex || 0;
+  //   const firstLastIndex = (currentIndex%this._itemsPerRow) == 0;
 
-    if (firstLastIndex) {
-      const newIndex = currentIndex + this._itemsPerRow;
-      this._setActiveOption(newIndex)
-    }
-  }
+  //   if (firstLastIndex) {
+  //     const newIndex = currentIndex + this._itemsPerRow;
+  //     this._setActiveOption(newIndex)
+  //   }
+  // }
 
-  private _navigateRight() {
-    const currentIndex = this._keyManager.activeItemIndex || 0;
-    const firstLastIndex = (currentIndex%this._itemsPerRow) == (this._itemsPerRow - 1);
+  // private _navigateRight() {
+  //   const currentIndex = this._keyManager.activeItemIndex || 0;
+  //   const firstLastIndex = (currentIndex%this._itemsPerRow) == (this._itemsPerRow - 1);
 
-    if (firstLastIndex) {
-      const newIndex = currentIndex - this._itemsPerRow;
-      this._setActiveOption(newIndex)
-    }
-  }
+  //   if (firstLastIndex) {
+  //     const newIndex = currentIndex - this._itemsPerRow;
+  //     this._setActiveOption(newIndex)
+  //   }
+  // }
 
   /** Handles focusout events within the list. */
   private _handleFocusout = () => {
