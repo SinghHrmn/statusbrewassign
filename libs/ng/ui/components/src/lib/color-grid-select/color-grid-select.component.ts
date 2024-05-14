@@ -245,16 +245,71 @@ export class ColorGridSelectComponent
   @HostListener('keydown', ['$event'])
   private _onKeydown(event: KeyboardEvent) {
     switch (event.keyCode) {
-      case UP_ARROW:
-      case DOWN_ARROW:
-      case LEFT_ARROW:
-      case RIGHT_ARROW: {
-        // add logic
-        // ....
-
-        this._keyManager.onKeydown(event); // @fixme remove the following after the grid logic is implemented
+      case UP_ARROW: {
+        this._navigateUp();
+        this._keyManager.onKeydown(event);
         break;
       }
+      case DOWN_ARROW: {
+        this._navigateDown();
+        this._keyManager.onKeydown(event);
+        break;
+      }
+      case LEFT_ARROW: {
+        this._navigateLeft();
+        this._keyManager.onKeydown(event);
+        break;
+      }
+      case RIGHT_ARROW: {
+        this._navigateRight();
+        this._keyManager.onKeydown(event);
+        break;
+      }
+    }
+  }
+
+  private _navigateUp() {
+    const currentIndex = this._keyManager.activeItemIndex || 0;
+    const newIndex = currentIndex - (this._itemsPerRow - 1);
+
+    if (newIndex >= 0) {
+      this._setActiveOption(newIndex);
+    } else {
+      const lastRowIndex = Math.max(0, this.grid().length - 1);
+      const newLastIndex = lastRowIndex * this._itemsPerRow + currentIndex + 1;
+      this._setActiveOption(newLastIndex);
+
+    }
+  }
+
+  private _navigateDown() {
+    const currentIndex = this._keyManager.activeItemIndex || 0;
+    const newIndex = currentIndex + this._itemsPerRow;
+    if (newIndex < this.items.length) {
+      this._setActiveOption(newIndex - 1);
+    } else {
+      const newIndex = currentIndex%this._itemsPerRow;
+      this._setActiveOption(newIndex-1);
+    }
+  }
+
+  private _navigateLeft() {
+    const currentIndex = this._keyManager.activeItemIndex || 0;
+    const firstLastIndex = (currentIndex%this._itemsPerRow) == 0;
+
+    if (firstLastIndex) {
+      const newIndex = currentIndex + this._itemsPerRow;
+      this._setActiveOption(newIndex)
+    }
+  }
+
+  private _navigateRight() {
+    const currentIndex = this._keyManager.activeItemIndex || 0;
+    const firstLastIndex = (currentIndex%this._itemsPerRow) == (this._itemsPerRow - 1);
+
+    if (firstLastIndex) {
+      const newIndex = currentIndex - this._itemsPerRow;
+      this._setActiveOption(newIndex)
     }
   }
 
