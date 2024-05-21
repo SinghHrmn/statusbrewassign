@@ -38,6 +38,12 @@ export const COLOR_GRID_ITEMS = [
   'rgb(255, 222, 173)', // Navajo White
 ];
 
+export const COLOR_GRID_ITEM_SIZE_MAP = {
+  small: 32,
+  medium: 64,
+  large: 80,
+} as const;
+
 export const COLOR_GRID_ITEM_SIZES = ['small', 'medium', 'large'] as const;
 
 export const getContrastColor = (color: Color | string) =>

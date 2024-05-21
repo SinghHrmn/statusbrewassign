@@ -25,6 +25,7 @@ import {
   ColorGridItemComponent,
   ColorGridSelect,
   COLOR_GRID_SELECT,
+  COLOR_GRID_ITEM_SIZE_MAP,
 } from './item';
 import { FocusKeyManager } from '@angular/cdk/a11y';
 import {
@@ -199,6 +200,8 @@ export class ColorGridSelectComponent
 
     // Set the initial focus.
     this._resetActiveOption();
+  
+    this.resizeListener();
 
     // Move the tabindex to the currently-focused list item.
     // this._keyManager.change.subscribe((activeItemIndex) => {
@@ -229,13 +232,9 @@ export class ColorGridSelectComponent
       this.width = this._el.nativeElement.offsetWidth;
     }
 
-    const itemSizeMap = {
-      small: 40,
-      medium: 80,
-      large: 160,
-    };
+
     if (this.width > 0) {
-      this._itemsPerRow.update(() => Math.floor(this.width / itemSizeMap[this.itemSize]))
+      this._itemsPerRow.update(() => Math.floor(this.width / COLOR_GRID_ITEM_SIZE_MAP[this.itemSize]))
     }
   }
 
@@ -251,11 +250,6 @@ export class ColorGridSelectComponent
     this._destroyed.complete();
   }
 
-  /**
-   * @todo
-   * The logic to decide how to navigate inside the grid when the
-   * up, down, left and right buttons are pressed
-   */
   @HostListener('keydown', ['$event'])
   private _onKeydown(event: KeyboardEvent) {
     switch (event.keyCode) {
@@ -289,13 +283,26 @@ export class ColorGridSelectComponent
     const currentIndex = this._keyManager.activeItemIndex || 0;
     const newIndex = currentIndex - (this._itemsPerRow() - 1);
 
-    if (newIndex >= 0) {
+    if (newIndex > 0) {
       this._setActiveOption(newIndex);
     } else {
-      const lastRowIndex = Math.max(0, this.grid().length - 1);
-      const newLastIndex = lastRowIndex * this._itemsPerRow() + currentIndex + 1;
-      this._setActiveOption(newLastIndex);
+      const gridLastIndex = this.grid().length - 1;
+      const gridItemsLastIndex = this.grid()[gridLastIndex].length - 1;
 
+      let lastRowIndex = Math.max(0, gridLastIndex);
+
+      if (currentIndex <= this._itemsPerRow() && currentIndex > gridItemsLastIndex) {
+        lastRowIndex -= 1;
+      }
+
+      let newLastIndex: number;
+      if (lastRowIndex < 0) {
+        newLastIndex = currentIndex + 1;
+      } else {
+        newLastIndex = lastRowIndex * this._itemsPerRow() + currentIndex + 1;
+      }
+
+      this._setActiveOption(newLastIndex);
     }
   }
 
@@ -312,26 +319,6 @@ export class ColorGridSelectComponent
       this._setActiveOption(newIndex-1);
     }
   }
-
-  // private _navigateLeft() {
-  //   const currentIndex = this._keyManager.activeItemIndex || 0;
-  //   const firstLastIndex = (currentIndex%this._itemsPerRow) == 0;
-
-  //   if (firstLastIndex) {
-  //     const newIndex = currentIndex + this._itemsPerRow;
-  //     this._setActiveOption(newIndex)
-  //   }
-  // }
-
-  // private _navigateRight() {
-  //   const currentIndex = this._keyManager.activeItemIndex || 0;
-  //   const firstLastIndex = (currentIndex%this._itemsPerRow) == (this._itemsPerRow - 1);
-
-  //   if (firstLastIndex) {
-  //     const newIndex = currentIndex - this._itemsPerRow;
-  //     this._setActiveOption(newIndex)
-  //   }
-  // }
 
   /** Handles focusout events within the list. */
   private _handleFocusout = () => {
