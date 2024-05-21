@@ -38,6 +38,8 @@ import { chunk } from 'lodash';
 import { _getFocusedElementPierceShadowDom } from '@angular/cdk/platform';
 import { Subject, takeUntil } from 'rxjs';
 
+import { ResizeObserverModule } from '@ng-web-apis/resize-observer';
+
 /**
  *
  * A lot of the code has been inspired by
@@ -53,7 +55,7 @@ import { Subject, takeUntil } from 'rxjs';
 @Component({
   selector: 'brew-color-grid-select',
   standalone: true,
-  imports: [CommonModule, ColorGridItemComponent],
+  imports: [CommonModule, ColorGridItemComponent, ResizeObserverModule],
   templateUrl: './color-grid-select.component.html',
   styleUrl: './color-grid-select.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -191,6 +193,11 @@ export class ColorGridSelectComponent
     }
   }
 
+  onResize(entry: ResizeObserverEntry[]) {
+    this.width = entry[0].contentRect.width
+    this._itemsPerRow.update(() => Math.max(1, Math.floor(this.width / COLOR_GRID_ITEM_SIZE_MAP[this.itemSize])))
+  }
+
   public ngAfterViewInit() {
     this._keyManager = new FocusKeyManager(this.colorItems)
       .withHomeAndEnd()
@@ -200,9 +207,6 @@ export class ColorGridSelectComponent
 
     // Set the initial focus.
     this._resetActiveOption();
-  
-    this.resizeListener();
-
     // Move the tabindex to the currently-focused list item.
     // this._keyManager.change.subscribe((activeItemIndex) => {
     // this._setActiveOption(activeItemIndex);
@@ -226,17 +230,6 @@ export class ColorGridSelectComponent
   }
 
 
-  @HostListener('window:resize', ['$event'])
-  resizeListener() {
-    if (this._el) {
-      this.width = this._el.nativeElement.offsetWidth;
-    }
-
-
-    if (this.width > 0) {
-      this._itemsPerRow.update(() => Math.floor(this.width / COLOR_GRID_ITEM_SIZE_MAP[this.itemSize]))
-    }
-  }
 
   public ngOnDestroy() {
     this._keyManager.destroy();
