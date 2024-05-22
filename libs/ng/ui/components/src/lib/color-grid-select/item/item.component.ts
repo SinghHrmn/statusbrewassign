@@ -100,6 +100,7 @@ export class ColorGridItemComponent implements Highlightable, FocusableOption {
   /** Analog to HTML 'name' attribute used to group radios for unique selection. */
   @Input() name!: string;
 
+  @HostBinding('attr.aria-label')
   @Input()
   public get value() {
     return this._value;
